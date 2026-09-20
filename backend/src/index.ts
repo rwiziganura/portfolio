@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { migrate } from './db/migrate'
 import { seed } from './db/seed'
+import { testDatabaseConnection } from './db/client'
 import adminRouter from './routes/admin'
 import contactRouter from './routes/contact'
 import projectsRouter from './routes/projects'
@@ -22,6 +23,10 @@ app.use('/api/skills', skillsRouter)
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 
 async function start() {
+  await testDatabaseConnection().catch((err) => {
+    console.error('❌ TiDB Cloud connection failed:', err.message)
+    process.exit(1)
+  })
   await migrate()
   await seed()
   app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`))

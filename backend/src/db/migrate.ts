@@ -1,43 +1,50 @@
-import { db } from './client'
+import { pool } from './client'
 
 export async function migrate() {
-  await db.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS contact_messages (
-      id        INTEGER PRIMARY KEY AUTOINCREMENT,
-      name      TEXT NOT NULL,
-      email     TEXT NOT NULL,
-      subject   TEXT NOT NULL,
-      message   TEXT NOT NULL,
-      read      INTEGER DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS projects (
-      id           INTEGER PRIMARY KEY,
-      title        TEXT NOT NULL,
-      description  TEXT NOT NULL,
-      category     TEXT NOT NULL,
-      technologies TEXT NOT NULL,
-      image        TEXT,
-      github       TEXT,
-      live         TEXT,
-      featured     INTEGER DEFAULT 0,
-      overview     TEXT,
-      problem      TEXT,
-      solution     TEXT,
-      features     TEXT,
-      challenges   TEXT,
-      lessons      TEXT,
-      screenshots  TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS skills (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      name        TEXT NOT NULL,
-      category    TEXT NOT NULL,
-      description TEXT NOT NULL,
-      icon        TEXT NOT NULL
-    );
-  `)
-  console.log('Database migrated.')
+  const conn = await pool.getConnection()
+  try {
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        name       VARCHAR(255) NOT NULL,
+        email      VARCHAR(255) NOT NULL,
+        subject    VARCHAR(255) NOT NULL,
+        message    TEXT NOT NULL,
+        read_status TINYINT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id           INT PRIMARY KEY,
+        title        VARCHAR(255) NOT NULL,
+        description  TEXT NOT NULL,
+        category     VARCHAR(100) NOT NULL,
+        technologies TEXT NOT NULL,
+        image        TEXT,
+        github       TEXT,
+        live         TEXT,
+        featured     TINYINT DEFAULT 0,
+        overview     TEXT,
+        problem      TEXT,
+        solution     TEXT,
+        features     TEXT,
+        challenges   TEXT,
+        lessons      TEXT,
+        screenshots  TEXT
+      )
+    `)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS skills (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        name        VARCHAR(255) NOT NULL UNIQUE,
+        category    VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        icon        VARCHAR(100) NOT NULL
+      )
+    `)
+    console.log('Database migrated.')
+  } finally {
+    conn.release()
+  }
 }

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import nodemailer from 'nodemailer'
-import { db } from '../db/client'
+import { pool } from '../db/client'
 
 const router = Router()
 
@@ -23,10 +23,16 @@ router.post('/', async (req: Request, res: Response) => {
   const { name, email, subject, message } = req.body as Record<string, string>
 
   // Save to database
-  await db.execute({
-    sql: 'INSERT INTO contact_messages (name, email, subject, message) VALUES (?,?,?,?)',
-    args: [name.trim(), email.trim(), subject.trim(), message.trim()],
-  })
+  try {
+    await pool.execute(
+      'INSERT INTO contact_messages (name, email, subject, message) VALUES (?,?,?,?)',
+      [name.trim(), email.trim(), subject.trim(), message.trim()]
+    )
+  } catch (err) {
+    console.error('DB insert failed:', err)
+    res.status(500).json({ error: 'Failed to save message. Please try again.' })
+    return
+  }
 
   // Send email if SMTP is configured
   if (process.env.SMTP_USER && process.env.SMTP_PASS) {
